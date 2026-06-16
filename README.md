@@ -17,27 +17,6 @@ This project is based on the [Pangolin installer](https://github.com/fosrl/pango
 
 This project is not affiliated with the Pangolin team.
 
-## Project Structure
-
-```
-PangolinDeployer/
-├── deployer/           # Deployer Docker image
-│   ├── Dockerfile
-│   ├── entrypoint.sh
-│   ├── requirements.txt
-│   └── tests/
-│       └── test_smoke.py
-├── github-page/       # Interactive generator
-│   ├── index.html
-│   └── docker-compose.yml.template
-├── .github/            # CI workflows
-│   └── workflows/
-│       └── deployer-smoke-ci.yml
-├── plan-pangolinHeadlessDeploymentSystem.md
-├── AGENT.md
-└── LICENSE
-```
-
 ## Smoke Tests
 
 This repository includes pytest-based smoke tests for the deployer image.

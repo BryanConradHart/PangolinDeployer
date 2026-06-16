@@ -36,11 +36,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Verify built image exists
-        run: docker image inspect pangolin-deployer:ci
-
       - name: Make smoke script executable
-        run: chmod +x ./deployer/tests/smoke_tests.sh
+        run: chmod +x ./deployer/tests/smoke_tests.py
 
       - name: Set up Python
         uses: actions/setup-python@v4
