@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pangolin Deployer - Docker Compose Generator</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px; 
+            margin: 0 auto; 
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 { color: #333; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
+        h2 { color: #555; margin-top: 30px; }
+        .section { 
+            background: white; 
+            padding: 20px; 
+            margin: 20px 0; 
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .form-group { margin-bottom: 15px; }
+        label { 
+            display: block; 
+            font-weight: 600; 
+            margin-bottom: 5px;
+            color: #333;
+        }
+        label .required { color: #cc0000; }
+        label .optional { color: #666; font-weight: normal; }
+        input[type="text"], input[type="email"], input[type="password"], input[type="number"], select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 2px rgba(0,102,204,0.2);
+        }
+        .help-text { 
+            font-size: 12px; 
+            color: #666; 
+            margin-top: 3px;
+        }
+        .checkbox-group { display: flex; align-items: center; gap: 10px; }
+        .checkbox-group input { width: auto; }
+        .checkbox-group label { margin: 0; font-weight: normal; }
+        .cert-section {
+            background: #fffbe6;
+            border: 1px solid #ffe58f;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .cert-section h3 { margin-top: 0; color: #ad6800; }
+        textarea.cert-input {
+            font-family: monospace;
+            font-size: 12px;
+            min-height: 80px;
+        }
+        .btn {
+            background: #0066cc;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .btn:hover { background: #0052a3; }
+        .btn-secondary { background: #666; }
+        .btn-secondary:hover { background: #555; }
+        #preview {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre;
+            overflow-x: auto;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .tabs { display: flex; border-bottom: 1px solid #ddd; margin-bottom: 20px; }
+        .tab { 
+            padding: 10px 20px; 
+            cursor: pointer; 
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+        }
+        .tab.active { 
+            border-bottom-color: #0066cc; 
+            color: #0066cc;
+            font-weight: 600;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .warning {
+            background: #fff1f0;
+            border: 1px solid #ffa39e;
+            padding: 10px;
+            border-radius: 4px;
+            color: #cf1322;
+            margin: 10px 0;
+        }
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 10px 12px;
+            border-radius: 999px;
+            border: 1px solid transparent;
+            background: #eef4ff;
+            color: #1f2937;
+            font-size: 13px;
+            max-width: 100%;
+            word-break: break-word;
+        }
+        .status-info {
+            background: #eef4ff;
+            border-color: #bfdbfe;
+            color: #1d4ed8;
+        }
+        .status-warning {
+            background: #fff7e6;
+            border-color: #ffecb5;
+            color: #b45309;
+        }
+        .status-error {
+            background: #fff1f2;
+            border-color: #fecdd3;
+            color: #be123c;
+        }
+        .status-indicator {
+            width: 0.75rem;
+            height: 0.75rem;
+            border-radius: 999px;
+            flex-shrink: 0;
+            background: currentColor;
+        }
+        .status-text {
+            line-height: 1.4;
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <h1>🐧 Pangolin Deployer</h1>
+    <p>Generate a docker-compose file for headless Pangolin deployment.</p>
+    <p>This page helps make manual Docker Compose installation easier by generating the required Compose file and initial config for you. It does not replace Pangolin’s first-time setup flow: after deployment, you still complete the dashboard setup using the one-time token printed in the <code>pangolin</code> container logs.</p>
+    <p>For the complete manual install process, see the <a href="https://docs.pangolin.net/self-host/manual/docker-compose" target="_blank" rel="noopener noreferrer">Pangolin Docker Compose manual</a>.</p>
+
+    <!-- Static Compose File -->
+    <div class="section">
+        <h2>Docker Compose File</h2>
+        <p>This compose file is static and ready to use. The versions and configuration will be substituted from your environment file.</p>
+        <pre id="staticCompose"></pre>
+        <button type="button" class="btn" onclick="downloadStaticCompose()">Download docker-compose.yml</button>
+    </div>
+
+    <!-- Configuration Wizard -->
+    <div class="section">
+        <h2>Configuration Wizard</h2>
+        <p>Fill out the required settings below. Your <code>stack.env</code> file will be generated automatically.</p>
+    </div>
+
+    <form id="deployForm">
+        <!-- Required Settings -->
+        <div class="section">
+            <h2>Required Settings</h2>
+            
+            <div class="form-group">
+                <label>Domain <span class="required">*</span></label>
+                <input type="text" id="domain" name="domain" placeholder="example.com" required>
+                <div class="help-text">Base domain for your Pangolin instance (e.g., vpn.example.com)</div>
+            </div>
+
+            <div class="form-group">
+                <label>Dashboard URL <span class="required">*</span></label>
+                <input type="text" id="dashboardUrl" name="dashboardUrl" placeholder="https://pangolin.example.com" required>
+                <div class="help-text">Full URL where Pangolin will be accessible</div>
+            </div>
+
+            <div class="form-group">
+                <label>Let's Encrypt Email <span class="required">*</span></label>
+                <input type="email" id="letsencryptEmail" name="letsencryptEmail" placeholder="admin@example.com" required>
+                <div class="help-text">Email for SSL certificate registration</div>
+            </div>
+        </div>
+
+        <!-- Optional Settings -->
+        <div class="section">
+            <h2>Optional Settings</h2>
+
+            <div class="form-group">
+                <label>Gerbil Start Port <span class="optional">(default: 51820)</span></label>
+                <input type="number" id="gerbilStartPort" name="gerbilStartPort" value="51820">
+                <div class="help-text">Starting port for Gerbil tunnel connections</div>
+            </div>
+
+            <div class="form-group">
+                <label>Log Level <span class="optional">(default: info)</span></label>
+                <select id="logLevel" name="logLevel">
+                    <option value="debug">debug</option>
+                    <option value="info" selected>info</option>
+                    <option value="warn">warn</option>
+                    <option value="error">error</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Organization Block Size <span class="optional">(default: 24)</span></label>
+                <input type="number" id="orgBlockSize" name="orgBlockSize" value="24">
+                <div class="help-text">CIDR block size for each organization</div>
+            </div>
+
+            <div class="form-group">
+                <label>Organization Subnet Group <span class="optional">(default: 100.90.128.0/20)</span></label>
+                <input type="text" id="orgSubnetGroup" name="orgSubnetGroup" value="100.90.128.0/20">
+                <div class="help-text">Subnet range for organization IP allocation</div>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="enableIpv6" name="enableIpv6" checked>
+                <label for="enableIpv6">Enable IPv6</label>
+            </div>
+
+            <div class="help-text">Gerbil is always enabled in this static compose configuration.</div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="enableGeoblocking" name="enableGeoblocking">
+                <label for="enableGeoblocking">Enable Geo-blocking (downloads MaxMind database)</label>
+            </div>
+        </div>
+
+        <!-- Server Settings -->
+        <div class="section">
+            <h2>Server Settings</h2>
+
+            <div class="form-group">
+                <label>Server Secret <span class="optional">(auto-generated if blank)</span></label>
+                <input type="password" id="serverSecret" name="serverSecret" placeholder="Leave blank for auto-generation">
+                <div class="help-text">Secret key for server authentication</div>
+            </div>
+        </div>
+
+        <!-- Email Settings -->
+        <div class="section">
+            <h2>Email Settings (Optional)</h2>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="emailEnabled" name="emailEnabled">
+                <label for="emailEnabled">Enable Email Notifications</label>
+            </div>
+
+            <div id="emailSettings" style="display: none; margin-top: 15px;">
+                <div class="form-group">
+                    <label>SMTP Host</label>
+                    <input type="text" id="emailSmtpHost" name="emailSmtpHost" placeholder="smtp.gmail.com">
+                </div>
+                <div class="form-group">
+                    <label>SMTP Port <span class="optional">(default: 587)</span></label>
+                    <input type="number" id="emailSmtpPort" name="emailSmtpPort" value="587">
+                </div>
+                <div class="form-group">
+                    <label>SMTP Username</label>
+                    <input type="text" id="emailSmtpUser" name="emailSmtpUser">
+                </div>
+                <div class="form-group">
+                    <label>SMTP Password</label>
+                    <input type="password" id="emailSmtpPass" name="emailSmtpPass">
+                </div>
+                <div class="form-group">
+                    <label>From Address</label>
+                    <input type="email" id="emailNoReply" name="emailNoReply" placeholder="noreply@example.com">
+                </div>
+            </div>
+        </div>
+
+        <!-- Certificate Settings -->
+        <div class="section">
+            <h2>SSL Certificate (Optional)</h2>
+            
+            <div class="warning">
+                ⚠️ <strong>Note:</strong> You can provide your own certificates OR skip this section and use Let's Encrypt's auto-generation (default).
+            </div>
+
+            <div class="cert-section">
+                <h3>Provide Custom Certificates</h3>
+                <p class="help-text">Paste the contents of your certificate files (PEM format). Leave blank to use Let's Encrypt auto-generation.</p>
+                
+                <div class="form-group">
+                    <label>SSL Certificate (fullchain.pem)</label>
+                    <textarea id="sslCertificate" name="sslCertificate" class="cert-input" placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>SSL Private Key (privkey.pem)</label>
+                    <textarea id="sslPrivateKey" name="sslPrivateKey" class="cert-input" placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- PostgreSQL (Optional) -->
+        <div class="section">
+            <h2>External PostgreSQL (Optional)</h2>
+            
+            <div class="form-group">
+                <label>PostgreSQL Connection String</label>
+                <input type="text" id="postgresConnectionString" name="postgresConnectionString" placeholder="postgresql://user:pass@host:5432/db">
+                <div class="help-text">Leave blank to use built-in SQLite database</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div id="versionStatus" class="status status-info help-text">
+                <span class="status-indicator"></span>
+                <span class="status-text">Checking latest Pangolin version...</span>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>First-time setup</h2>
+            <p>This generator creates the Compose stack and config files, but the first admin setup is completed through Pangolin itself.</p>
+            <p>After starting the stack, get the one-time setup token from the <code>pangolin</code> container logs and visit:</p>
+            <p><code>https://&lt;your-dashboard-host&gt;/auth/initial-setup</code></p>
+            <p>For full details, see the <a href="https://docs.pangolin.net/self-host/manual/docker-compose" target="_blank" rel="noopener noreferrer">Pangolin Docker Compose manual setup page</a>.</p>
+        </div>
+
+        <!-- Actions -->
+        <div class="section">
+            <button type="button" class="btn" onclick="generateEnvironmentFile()">Generate stack.env File</button>
+        </div>
+
+        <!-- Generated stack.env File -->
+        <div class="section hidden" id="envFileSection">
+            <h2>Environment File</h2>
+            <p>Copy this file to <code>stack.env</code> in the same directory as your <code>docker-compose.yml</code>.</p>
+            <pre id="envFilePreview"></pre>
+            <button type="button" class="btn" onclick="downloadEnvFile()">Download stack.env</button>
+        </div>
+    </form>
+
+    <script>
+        // Toggle email settings
+        document.getElementById('emailEnabled').addEventListener('change', function() {
+            document.getElementById('emailSettings').style.display = this.checked ? 'block' : 'none';
+            setEmailValidation(this.checked);
+        });
+
+        function setEmailValidation(enabled) {
+            ['emailSmtpHost', 'emailSmtpPort', 'emailSmtpUser', 'emailSmtpPass', 'emailNoReply'].forEach(id => {
+                const input = document.getElementById(id);
+                input.required = enabled;
+            });
+        }
+
+        const versions = {
+            pangolin: '1.19.2',
+            traefik: 'v3.6',
+            gerbil: 'latest'
+        };
+
+                let staticCompose = '';
+                const staticComposeFallback = `name: pangolin
+
+services:
+    deployer:
+        image: pangolin-deployer:latest
+        volumes:
+            - ./config:/config
+        env_file:
+            - pangolin.env
+        restart: on-failure
+
+    pangolin:
+        image: docker.io/fosrl/pangolin:${PANGOLIN_VERSION}
+        container_name: pangolin
+        restart: unless-stopped
+        volumes:
+            - ./config:/app/config
+        depends_on:
+            deployer:
+                condition: service_completed
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:3001/api/v1/"]
+            interval: 10s
+            timeout: 10s
+            retries: 15
+
+    gerbil:
+        image: docker.io/fosrl/gerbil:${GERBIL_VERSION}
+        container_name: gerbil
+        restart: unless-stopped
+        depends_on:
+            pangolin:
+                condition: service_healthy
+        command:
+            - --listenPort=3004
+            - --reachableAt=http://gerbil:3004
+            - --generateAndSaveKeyTo=/var/config/key
+            - --remoteConfig=http://pangolin:3001/api/v1/
+        volumes:
+            - ./config:/var/config
+        cap_add:
+            - NET_ADMIN
+            - SYS_MODULE
+        ports:
+            - ${GERBIL_START_PORT}:51820/udp
+            - 21820:21820/udp
+            - 443:443
+            - 80:80
+
+    traefik:
+        image: docker.io/traefik:${TRAEFIK_VERSION}
+        container_name: traefik
+        restart: unless-stopped
+        network_mode: service:gerbil
+        depends_on:
+            pangolin:
+                condition: service_healthy
+        command:
+            - --configFile=/etc/traefik/traefik_config.yml
+        volumes:
+            - ./config/traefik:/etc/traefik:ro
+            - ./config/letsencrypt:/letsencrypt
+            - ./config/traefik/logs:/var/log/traefik
+
+networks:
+    default:
+        driver: bridge
+        name: pangolin
+`;
+
+                async function loadStaticCompose() {
+                        try {
+                                const res = await fetch('docker-compose.yml.template');
+                                if (res.ok) {
+                                        staticCompose = await res.text();
+                                } else {
+                                        staticCompose = staticComposeFallback;
+                                }
+                        } catch (e) {
+                                staticCompose = staticComposeFallback;
+                        }
+                        displayStaticCompose();
+                }
+
+        async function getLatestReleaseTag(owner, repo, fallback, preserveV = false) {
+            const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/releases/latest`, {
+                headers: {
+                    'Accept': 'application/vnd.github+json'
+                }
+            });
+            if (!response.ok) {
+                const rateLimitRemaining = response.headers.get('x-ratelimit-remaining');
+                const rateLimitReset = response.headers.get('x-ratelimit-reset');
+                const error = new Error(`HTTP ${response.status}`);
+                error.status = response.status;
+                error.rateLimited = response.status === 403 && rateLimitRemaining === '0';
+                error.rateLimitReset = rateLimitReset;
+                throw error;
+            }
+            const data = await response.json();
+            if (!data || !data.tag_name) {
+                return fallback;
+            }
+
+            const tag = data.tag_name.trim();
+            if (preserveV) {
+                return tag.startsWith('v') ? tag : `v${tag}`;
+            }
+            return tag.replace(/^v/, '');
+        }
+
+        function setVersionStatus(message, level = 'info') {
+            const statusEl = document.getElementById('versionStatus');
+            statusEl.className = `status status-${level} help-text`;
+            statusEl.querySelector('.status-text').textContent = message;
+        }
+
+        async function loadLatestVersions() {
+            setVersionStatus('Checking latest image versions...', 'info');
+
+            const targets = [
+                { key: 'pangolin', owner: 'fosrl', repo: 'pangolin', fallback: versions.pangolin, preserveV: false },
+                { key: 'traefik', owner: 'traefik', repo: 'traefik', fallback: versions.traefik, preserveV: true },
+                { key: 'gerbil', owner: 'fosrl', repo: 'gerbil', fallback: versions.gerbil, preserveV: false }
+            ];
+
+            const results = await Promise.allSettled(targets.map(t => getLatestReleaseTag(t.owner, t.repo, t.fallback, t.preserveV)));
+            const statusParts = results.map((result, index) => {
+                const target = targets[index];
+                if (result.status === 'fulfilled') {
+                    versions[target.key] = result.value;
+                    return `${target.key}: ${result.value}`;
+                }
+
+                const err = result.reason;
+                console.error(`Failed to load ${target.key} version:`, err);
+                if (err && err.rateLimited) {
+                    return `${target.key}: rate limit reached, fallback ${target.fallback}`;
+                }
+                return `${target.key}: error fallback ${target.fallback}`;
+            });
+
+            const hasRateLimit = results.some(r => r.status === 'rejected' && r.reason?.rateLimited);
+            const hasError = results.some(r => r.status === 'rejected' && !r.reason?.rateLimited);
+            const level = hasError ? 'error' : (hasRateLimit ? 'warning' : 'info');
+            setVersionStatus(`Using images — ${statusParts.join(', ')}.`, level);
+        }
+
+        // Switch tabs
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            if (tab === 'compose') {
+                document.querySelector('.tab:first-child').classList.add('active');
+                document.getElementById('composeContent').classList.add('active');
+            } else {
+                document.querySelector('.tab:last-child').classList.add('active');
+                document.getElementById('envContent').classList.add('active');
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', function() {
+            loadLatestVersions();
+            loadStaticCompose();
+            setEmailValidation(document.getElementById('emailEnabled').checked);
+        });
+
+        function displayStaticCompose() {
+            document.getElementById('staticCompose').textContent = staticCompose;
+        }
+
+        function downloadStaticCompose() {
+            downloadFile('docker-compose.yml', staticCompose);
+        }
+
+        // Get form values
+        function getFormData() {
+            const data = {
+                domain: document.getElementById('domain').value,
+                dashboardUrl: document.getElementById('dashboardUrl').value,
+                letsencryptEmail: document.getElementById('letsencryptEmail').value,
+                gerbilStartPort: document.getElementById('gerbilStartPort').value,
+                logLevel: document.getElementById('logLevel').value,
+                orgBlockSize: document.getElementById('orgBlockSize').value,
+                orgSubnetGroup: document.getElementById('orgSubnetGroup').value,
+                enableIpv6: document.getElementById('enableIpv6').checked,
+                enableGeoblocking: document.getElementById('enableGeoblocking').checked,
+                serverSecret: document.getElementById('serverSecret').value,
+                emailEnabled: document.getElementById('emailEnabled').checked,
+                emailSmtpHost: document.getElementById('emailSmtpHost').value,
+                emailSmtpPort: document.getElementById('emailSmtpPort').value,
+                emailSmtpUser: document.getElementById('emailSmtpUser').value,
+                emailSmtpPass: document.getElementById('emailSmtpPass').value,
+                emailNoReply: document.getElementById('emailNoReply').value,
+                sslCertificate: document.getElementById('sslCertificate').value,
+                sslPrivateKey: document.getElementById('sslPrivateKey').value,
+                postgresConnectionString: document.getElementById('postgresConnectionString').value
+            };
+            return data;
+        }
+
+        // Generate .env file
+        function generateEnvironmentFile() {
+            const data = getFormData();
+            
+            // Validate required fields
+            if (!document.getElementById('deployForm').reportValidity()) {
+                return;
+            }
+
+            if ((data.sslCertificate && !data.sslPrivateKey) || (!data.sslCertificate && data.sslPrivateKey)) {
+                alert('Both SSL Certificate and SSL Private Key must be provided together, or leave both blank.');
+                return;
+            }
+
+            const gerbilStartPort = data.gerbilStartPort || '51820';
+            const logLevel = data.logLevel || 'info';
+            const orgBlockSize = data.orgBlockSize || '24';
+            const orgSubnetGroup = data.orgSubnetGroup || '100.90.128.0/20';
+            const smtpPort = data.emailSmtpPort || '587';
+
+            const envVars = [
+                `PANGOLIN_VERSION=${versions.pangolin}`,
+                `TRAEFIK_VERSION=${versions.traefik}`,
+                `GERBIL_VERSION=${versions.gerbil}`,
+                `DOMAIN=${data.domain}`,
+                `DASHBOARD_URL=${data.dashboardUrl}`,
+                `LETSENCRYPT_EMAIL=${data.letsencryptEmail}`,
+                `GERBIL_START_PORT=${gerbilStartPort}`,
+                `GERBIL_BASE_ENDPOINT=pangolin.${data.domain}`,
+                `LOG_LEVEL=${logLevel}`,
+                `ORG_BLOCK_SIZE=${orgBlockSize}`,
+                `ORG_SUBNET_GROUP=${orgSubnetGroup}`,
+                `ENABLE_IPV6=${data.enableIpv6}`,
+                `INSTALL_GERBIL=true`,
+                `ENABLE_GEOBLOCKING=${data.enableGeoblocking}`
+            ];
+
+            if (data.serverSecret) {
+                envVars.push(`SERVER_SECRET=${data.serverSecret}`);
+            }
+            if (data.emailEnabled) {
+                envVars.push(`EMAIL_ENABLED=true`);
+                if (data.emailSmtpHost) envVars.push(`EMAIL_SMTP_HOST=${data.emailSmtpHost}`);
+                if (data.emailSmtpPort) envVars.push(`EMAIL_SMTP_PORT=${data.emailSmtpPort}`);
+                if (data.emailSmtpUser) envVars.push(`EMAIL_SMTP_USER=${data.emailSmtpUser}`);
+                if (data.emailSmtpPass) envVars.push(`EMAIL_SMTP_PASS=${data.emailSmtpPass}`);
+                if (data.emailNoReply) envVars.push(`EMAIL_NO_REPLY=${data.emailNoReply}`);
+            }
+            if (data.sslCertificate) {
+                const encoded = btoa(unescape(encodeURIComponent(data.sslCertificate)));
+                envVars.push(`SSL_CERTIFICATE=${encoded}`);
+            }
+            if (data.sslPrivateKey) {
+                const encoded = btoa(unescape(encodeURIComponent(data.sslPrivateKey)));
+                envVars.push(`SSL_PRIVATE_KEY=${encoded}`);
+            }
+            if (data.postgresConnectionString) {
+                envVars.push(`POSTGRES_CONNECTION_STRING=${data.postgresConnectionString}`);
+            }
+
+            const envContent = envVars.join('\n');
+            document.getElementById('envFilePreview').textContent = envContent;
+            document.getElementById('envFileSection').classList.remove('hidden');
+
+            // Store for download
+            window.generatedEnv = envContent;
+        }
+
+        // Download stack.env file
+        function downloadEnvFile() {
+            if (!window.generatedEnv) {
+                alert('Please generate the stack.env file first');
+                return;
+            }
+            downloadFile('stack.env', window.generatedEnv);
+        }
+
+        function downloadFile(filename, content) {
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

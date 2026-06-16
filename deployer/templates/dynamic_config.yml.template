@@ -1,0 +1,24 @@
+http:
+  routers:
+    pangolin:
+      rule: "Host(`${DOMAIN}`)"
+      service: pangolin
+      tls:
+        certResolver: letsencrypt
+
+    dashboard:
+      rule: "Host(`pangolin.${DOMAIN}`)"
+      service: dashboard
+      tls:
+        certResolver: letsencrypt
+
+  services:
+    pangolin:
+      loadBalancer:
+        servers:
+          - url: "http://pangolin:3001"
+
+    dashboard:
+      loadBalancer:
+        servers:
+          - url: "http://pangolin:3002"

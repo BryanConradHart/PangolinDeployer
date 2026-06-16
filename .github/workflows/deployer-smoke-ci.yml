@@ -1,0 +1,56 @@
+name: Deployer CI — Build & Smoke Tests
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'deployer/**'
+  push:
+    branches: [ main ]
+    paths:
+      - 'deployer/**'
+
+jobs:
+  build-and-smoke:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up QEMU & Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build deployer image (load to runner)
+        uses: docker/build-push-action@v4
+        with:
+          context: ./deployer
+          file: ./deployer/Dockerfile
+          push: false
+          load: true
+          tags: pangolin-deployer:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify built image exists
+        run: docker image inspect pangolin-deployer:ci
+
+      - name: Make smoke script executable
+        run: chmod +x ./deployer/tests/smoke_tests.sh
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r ./deployer/requirements.txt
+
+      - name: Run smoke tests
+        run: pytest
