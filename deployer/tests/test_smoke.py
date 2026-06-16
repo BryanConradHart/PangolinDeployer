@@ -12,15 +12,6 @@ IMAGE = os.environ.get("DEPLOYER_TEST_IMAGE", DEFAULT_IMAGE)
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEPLOYER_DIR = REPO_ROOT / "deployer"
 
-
-def image_exists(image):
-    return subprocess.run(
-        ["docker", "image", "inspect", image],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    ).returncode == 0
-
-
 def build_image(image):
     print(f"Building Docker image {image} from {DEPLOYER_DIR}")
     subprocess.run(
@@ -38,8 +29,7 @@ def tmp_config_dir():
 
 @pytest.fixture(scope="module")
 def deployer_image():
-    if not image_exists(IMAGE):
-        build_image(IMAGE)
+    build_image(IMAGE)
     return IMAGE
 
 

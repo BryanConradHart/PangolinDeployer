@@ -442,7 +442,7 @@ networks:
 
                 async function loadStaticCompose() {
                         try {
-                                const res = await fetch('docker-compose.yml.template');
+                                const res = await fetch('deployer/templates/docker-compose.yml.template');
                                 if (res.ok) {
                                         staticCompose = await res.text();
                                 } else {
