@@ -6,7 +6,7 @@ The Pangolin installer and manual Docker Compose instructions require interactiv
 
 ## Quick Start
 
-1. Open https://BryanConradHart.github.io/PangolinDeployer/github-page/index.html in a browser
+1. Open [the configuration wizard](https://BryanConradHart.github.io/PangolinDeployer) in a browser
 2. Fill in your domain and configuration
 3. Download the generated `docker-compose.yml` and `stack.env`
 4. Run `docker compose up -d`
